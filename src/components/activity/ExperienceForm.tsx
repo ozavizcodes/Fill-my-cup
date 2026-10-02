@@ -1,0 +1,15 @@
+import { useState, type FormEvent } from 'react'
+import { experienceCategories, experienceCategoryMeta, type Experience } from '../../types/experience'
+
+export type ExperienceDraft = Pick<Experience, 'title' | 'category' | 'date' | 'description' | 'notes'>
+type ExperienceFormProps = { experience?: Experience; onCancel: () => void; onSubmit: (draft: ExperienceDraft) => void }
+
+const emptyDraft: ExperienceDraft = { title: '', category: 'reading', date: '', description: '', notes: '' }
+
+export function ExperienceForm({ experience, onCancel, onSubmit }: ExperienceFormProps) {
+  const [draft, setDraft] = useState<ExperienceDraft>(experience ? { title: experience.title, category: experience.category, date: experience.date ?? '', description: experience.description ?? '', notes: experience.notes ?? '' } : emptyDraft)
+  const [error, setError] = useState('')
+  const update = <K extends keyof ExperienceDraft>(key: K, value: ExperienceDraft[K]) => setDraft((current) => ({ ...current, [key]: value }))
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); if (!draft.title.trim() || !draft.category) { setError('Please add a title and category.'); return } onSubmit({ ...draft, title: draft.title.trim(), date: draft.date || undefined, description: draft.description?.trim() || undefined, notes: draft.notes?.trim() || undefined }) }
+  return <form className="experience-form" onSubmit={submit}><div className="form-field"><label htmlFor="experience-title">Title <span aria-hidden="true">*</span></label><input id="experience-title" value={draft.title} onChange={(event) => update('title', event.target.value)} autoFocus /></div><div className="form-field"><label htmlFor="experience-category">Category <span aria-hidden="true">*</span></label><select id="experience-category" value={draft.category} onChange={(event) => update('category', event.target.value as Experience['category'])}>{experienceCategories.map((category) => <option key={category} value={category}>{experienceCategoryMeta[category].emoji} {experienceCategoryMeta[category].label}</option>)}</select></div><div className="form-field"><label htmlFor="experience-date">Date</label><input id="experience-date" type="date" value={draft.date} onChange={(event) => update('date', event.target.value)} /></div><div className="form-field"><label htmlFor="experience-description">Description</label><textarea id="experience-description" rows={3} value={draft.description} onChange={(event) => update('description', event.target.value)} /></div><div className="form-field"><label htmlFor="experience-notes">Notes</label><textarea id="experience-notes" rows={3} value={draft.notes} onChange={(event) => update('notes', event.target.value)} /></div>{error && <p className="form-error" role="alert">{error}</p>}<div className="modal-actions"><button className="button button--quiet" type="button" onClick={onCancel}>Cancel</button><button className="button" type="submit">{experience ? 'Save changes' : 'Add experience'}</button></div></form>
+}
