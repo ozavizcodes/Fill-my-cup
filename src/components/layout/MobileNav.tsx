@@ -3,7 +3,7 @@ import { NavLink } from 'react-router'
 
 const links = [
   { to: '/', label: 'Home', Icon: House, end: true },
-  { to: '/experiences', label: 'Explore', Icon: Sparkles },
+  { to: '/experiences', label: 'Experiences', Icon: Sparkles },
   { to: '/reading', label: 'Reading', Icon: BookOpen },
   { to: '/memories', label: 'Memories', Icon: Heart },
 ]
