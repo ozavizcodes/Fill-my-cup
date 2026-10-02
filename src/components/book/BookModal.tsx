@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
-import type { Book, BookStatus } from '../../types/book'
 import type { BookDraft } from '../../stores/bookStore'
+import type { Book, BookStatus } from '../../types/book'
+import { useCloseOnEscape } from '../../utils/useCloseOnEscape'
 
 type BookModalProps = { book?: Book; onClose: () => void; onSubmit: (draft: BookDraft) => void }
 
 export function BookModal({ book, onClose, onSubmit }: BookModalProps) {
+  useCloseOnEscape(onClose)
   const [title, setTitle] = useState(book?.title ?? '')
   const [author, setAuthor] = useState(book?.author ?? '')
   const [status, setStatus] = useState<BookStatus>(book?.status ?? 'planned')

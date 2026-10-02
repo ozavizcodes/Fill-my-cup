@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import type { MemoryDraft } from '../../stores/memoryStore'
 import { memoryCategories, type Memory } from '../../types/memory'
+import { useCloseOnEscape } from '../../utils/useCloseOnEscape'
 
 type MemoryModalProps = {
   memory?: Memory
@@ -19,11 +20,7 @@ export function MemoryModal({ memory, onClose, onSubmit }: MemoryModalProps) {
   const [description, setDescription] = useState(memory?.description ?? '')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [onClose])
+  useCloseOnEscape(onClose)
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

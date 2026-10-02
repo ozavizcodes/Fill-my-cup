@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
+import { memo } from 'react'
 import type { Memory } from '../../types/memory'
+import { formatCalendarDate } from '../../utils/dates'
 
 type MemoryCardProps = {
   memory: Memory
@@ -7,19 +8,17 @@ type MemoryCardProps = {
   onDelete: (memory: Memory) => void
 }
 
-const dateFormatter = new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
-
-export function MemoryCard({ memory, onEdit, onDelete }: MemoryCardProps) {
-  const formattedDate = dateFormatter.format(new Date(`${memory.date}T00:00:00Z`))
+export const MemoryCard = memo(function MemoryCard({ memory, onEdit, onDelete }: MemoryCardProps) {
+  const formattedDate = formatCalendarDate(memory.date)
 
   return (
-    <motion.article className="memory-card card" exit={{ opacity: 0, y: 8 }} whileHover={{ y: -2 }} transition={{ duration: 0.16 }}>
+    <article className="memory-card card">
       <div className="memory-card__header">
         <span className="memory-emoji" aria-hidden="true">{memory.emoji || '✨'}</span>
         <div>
           <h2>{memory.title}</h2>
           <p className="memory-meta">
-            <time dateTime={memory.date}>{formattedDate}</time>
+            {formattedDate && <time dateTime={memory.date}>{formattedDate}</time>}
             {memory.category && <span className="memory-category">{memory.category}</span>}
           </p>
         </div>
@@ -29,6 +28,6 @@ export function MemoryCard({ memory, onEdit, onDelete }: MemoryCardProps) {
         <button className="memory-action" type="button" onClick={() => onEdit(memory)}>Edit</button>
         <button className="memory-action" type="button" onClick={() => onDelete(memory)}>Delete</button>
       </div>
-    </motion.article>
+    </article>
   )
-}
+})

@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Plus, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { MemoryCard } from '../components/memory/MemoryCard'
 import { MemoryModal } from '../components/memory/MemoryModal'
 import { useMemoryStore } from '../stores/memoryStore'
 import type { Memory } from '../types/memory'
+import { useCloseOnEscape } from '../utils/useCloseOnEscape'
 
 export function MemoriesPage() {
   const memories = useMemoryStore((state) => state.memories)
@@ -16,6 +17,8 @@ export function MemoriesPage() {
   const [deleting, setDeleting] = useState<Memory | undefined>()
   const journal = useMemo(() => memories.toSorted((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)), [memories])
   const closeModal = () => { setEditing(undefined); setIsAdding(false) }
+  const cancelDelete = useCallback(() => setDeleting(undefined), [])
+  useCloseOnEscape(cancelDelete)
 
   return (
     <motion.div className="memory-page" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -30,13 +33,11 @@ export function MemoriesPage() {
       {journal.length ? (
         <div className="memory-journal">
           <div className="memory-timeline">
-            <AnimatePresence>
-              {journal.map((memory) => (
-                <div className="memory-entry" key={memory.id}>
-                  <MemoryCard memory={memory} onEdit={setEditing} onDelete={setDeleting} />
-                </div>
-              ))}
-            </AnimatePresence>
+            {journal.map((memory) => (
+              <div className="memory-entry" key={memory.id}>
+                <MemoryCard memory={memory} onEdit={setEditing} onDelete={setDeleting} />
+              </div>
+            ))}
           </div>
         </div>
       ) : (
@@ -47,19 +48,19 @@ export function MemoriesPage() {
           <button className="button" type="button" onClick={() => setIsAdding(true)}><Plus size={16} /> Add your first memory</button>
         </div>
       )}
+      {(isAdding || editing) && (
+        <MemoryModal
+          key={editing?.id ?? 'new'}
+          memory={editing}
+          onClose={closeModal}
+          onSubmit={(draft) => {
+            if (editing) updateMemory(editing.id, draft)
+            else addMemory(draft)
+            closeModal()
+          }}
+        />
+      )}
       <AnimatePresence>
-        {(isAdding || editing) && (
-          <MemoryModal
-            key={editing?.id ?? 'new'}
-            memory={editing}
-            onClose={closeModal}
-            onSubmit={(draft) => {
-              if (editing) updateMemory(editing.id, draft)
-              else addMemory(draft)
-              closeModal()
-            }}
-          />
-        )}
         {deleting && (
           <motion.div className="modal-backdrop memory-modal-backdrop" role="presentation" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <section className="confirm-card" role="dialog" aria-modal="true" aria-labelledby="delete-memory-title">
