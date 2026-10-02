@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowUpRight, Sparkles } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { CategoryProgressCard } from '../components/dashboard/CategoryProgressCard'
 import { ExperiencePreviewCard } from '../components/dashboard/ExperiencePreviewCard'
@@ -16,11 +16,37 @@ import type { Memory } from '../types/memory'
 const MotionLink = motion.create(Link)
 const entrance = { hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }
 
+const localDateLabel = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+const dayBoundaries = [0, 5, 12, 17]
+
+function greetingFor(date: Date) {
+  const hour = date.getHours()
+  if (hour >= 5 && hour < 12) return 'Good morning, Faith ✨'
+  if (hour >= 12 && hour < 17) return 'Good afternoon, Faith ✨'
+  return 'Good evening, Faith ✨'
+}
+
+function msUntilNextBoundary(from: Date) {
+  const upcoming = dayBoundaries.map((hour) => new Date(from.getFullYear(), from.getMonth(), from.getDate(), hour)).find((boundary) => boundary.getTime() > from.getTime())
+  const next = upcoming ?? new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1)
+  return Math.max(next.getTime() - from.getTime(), 0)
+}
+
+function useLocalNow() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const timer = window.setTimeout(() => setNow(new Date()), msUntilNextBoundary(now))
+    return () => window.clearTimeout(timer)
+  }, [now])
+  return now
+}
+
 const plannedStamp = (experience: Experience) => experience.date ?? '9999-99-99'
 const livedStamp = (experience: Experience) => experience.completedAt ?? (experience.date ? `${experience.date}T00:00:00.000Z` : experience.createdAt)
 const safePercent = (value: number) => Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0
 
 export function WelcomePage() {
+  const now = useLocalNow()
   const experiences = useExperienceStore((state) => state.experiences)
   const currentBook = useBookStore((state) => state.books.filter((book) => book.status === 'reading').toSorted((a, b) => (b.startedAt ?? '').localeCompare(a.startedAt ?? ''))[0])
   const latestMemory = useMemoryStore((state) => state.memories.reduce<Memory | undefined>((latest, memory) => !latest || memory.date > latest.date || (memory.date === latest.date && memory.createdAt > latest.createdAt) ? memory : latest, undefined))
@@ -42,7 +68,7 @@ export function WelcomePage() {
   }, [experiences])
 
   return <motion.div initial="hidden" animate="visible" transition={{ staggerChildren: 0.08 }}>
-    <motion.section className="page-intro" variants={entrance} transition={{ duration: 0.45 }}><span className="eyebrow">October — December 2026</span><h1 className="page-title">Good morning, Faith ✨</h1><p className="page-subtitle">Let's make the rest of 2026 count.</p></motion.section>
+    <motion.section className="page-intro" variants={entrance} transition={{ duration: 0.45 }}><span className="eyebrow">October — December 2026</span><h1 className="page-title">{greetingFor(now)}</h1><p className="page-subtitle">{localDateLabel.format(now)}</p><p className="page-subtitle">Let's make the rest of 2026 count.</p></motion.section>
     <motion.section className="progress-card card" variants={entrance} transition={{ duration: 0.45 }}><div><span className="eyebrow">Your little season</span><h2 className="card-heading">{completedCount} / {experiences.length} experiences lived</h2><p className="card-copy">A beautifully ordinary life is built one meaningful moment at a time.</p></div><ProgressRing value={percentage} /></motion.section>
     <div className="dashboard-grid">
       <motion.section className="section next-experience" variants={entrance} transition={{ duration: 0.45 }}><SectionHeader eyebrow="Coming up" title="Your Next Experience" /><ExperiencePreviewCard experience={nextExperience} /></motion.section>
